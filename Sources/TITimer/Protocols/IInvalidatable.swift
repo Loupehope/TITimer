@@ -7,7 +7,7 @@
 
 import UIKit
 
-protocol IInvalidatable: AnyObject {
+public protocol IInvalidatable: AnyObject {
     
     // Уничтожить объект
     func invalidate()
@@ -17,11 +17,9 @@ protocol IInvalidatable: AnyObject {
 
 extension Timer: IInvalidatable { }
 
-extension CADisplayLink: IInvalidatable { }
-
 extension DispatchSource: IInvalidatable {
     
-    func invalidate() {
+    public func invalidate() {
         setEventHandler(handler: nil)
         
         if !isCancelled {

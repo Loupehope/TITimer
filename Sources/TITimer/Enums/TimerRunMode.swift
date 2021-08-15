@@ -5,7 +5,7 @@
 //  Created by Vlad Suhomlinov on 15.08.2021.
 //
 
-enum TimerRunMode {
+public enum TimerRunMode {
     
     // Время таймера изменяется только при активной работе приложения
     case onlyActive

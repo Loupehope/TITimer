@@ -1,7 +1,7 @@
 import UIKit
 
-final class TITimer {
-    
+public final class TITimer: ITimer {
+
     private let mode: TimerRunMode
     private let type: TimerType
 
@@ -9,17 +9,18 @@ final class TITimer {
     
     private var enterBackgroundDate: Date?
     private var interval: TimeInterval = 0
-    private var elapsedTime: TimeInterval = 0 {
-        didSet {
-            eventHandler?(elapsedTime)
-        }
+
+    public private(set) var elapsedTime: TimeInterval = 0
+    
+    public var isRunning: Bool {
+        sourceTimer != nil
     }
     
-    var eventHandler: ((TimeInterval) -> Void)?
+    public var eventHandler: ((TimeInterval) -> Void)?
     
     // MARK: - Initialization
     
-    init(type: TimerType, mode: TimerRunMode) {
+    public init(type: TimerType, mode: TimerRunMode) {
         self.mode = mode
         self.type = type
         
@@ -32,11 +33,13 @@ final class TITimer {
         if mode == .activeAndBackground {
             removeObserver()
         }
+        
+        invalidate()
     }
     
     // MARK: - Public
     
-    func start(with interval: TimeInterval) {
+    public func start(with interval: TimeInterval = 1) {
         invalidate()
         
         self.interval = interval
@@ -48,17 +51,17 @@ final class TITimer {
         case let .runloopTimer(runloop, mode):
             sourceTimer = startTimer(interval: interval, runloop: runloop, mode: mode)
             
-        case let .caDisplayLink(runloop, mode):
-            sourceTimer = startCADisplayLink(runloop: runloop, mode: mode)
-            
         case let .custom(timer):
             sourceTimer = timer
 
             timer.start(with: interval)
         }
+        
+        eventHandler?(elapsedTime)
     }
     
-    func invalidate() {
+    public func invalidate() {
+        elapsedTime = 0
         sourceTimer?.invalidate()
         sourceTimer = nil
     }
@@ -71,6 +74,17 @@ final class TITimer {
         }
         
         elapsedTime += interval
+        
+        eventHandler?(elapsedTime)
+    }
+}
+
+// MARK: - Factory
+
+extension TITimer {
+
+    public static var `default`: TITimer {
+        .init(type: .runloopTimer(runloop: .main, mode: .default), mode: .activeAndBackground)
     }
 }
 
@@ -104,6 +118,7 @@ private extension TITimer {
         
         enterBackgroundDate = nil
         elapsedTime += timeInBackground
+        eventHandler?(elapsedTime)
     }
     
     @objc func didEnterBackgroundNotification() {
@@ -116,8 +131,8 @@ private extension TITimer {
 private extension TITimer {
 
     func startDispatchSourceTimer(interval: TimeInterval, queue: DispatchQueue) -> IInvalidatable? {
-        let timer = DispatchSource.makeTimerSource(flags: .strict, queue: queue)
-        timer.schedule(deadline: .distantFuture, repeating: interval)
+        let timer = DispatchSource.makeTimerSource(flags: [], queue: queue)
+        timer.schedule(deadline: .now() + interval, repeating: interval)
         timer.setEventHandler(handler: handleSourceUpdate)
         
         timer.resume()
@@ -136,18 +151,6 @@ private extension TITimer {
         }
         
         runloop.add(timer, forMode: mode)
-        
-        return timer
-    }
-}
-
-// MARK: - CADisplayLink
-
-private extension TITimer {
-    
-    func startCADisplayLink(runloop: RunLoop, mode: RunLoop.Mode) -> IInvalidatable {
-        let timer = CADisplayLink(target: self, selector: #selector(handleSourceUpdate))
-        timer.add(to: runloop, forMode: mode)
         
         return timer
     }
