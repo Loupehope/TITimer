@@ -114,7 +114,7 @@ private extension TITimer {
             return
         }
         
-        let timeInBackground = -unwrappedEnterBackgroundDate.timeIntervalSinceNow
+        let timeInBackground = -unwrappedEnterBackgroundDate.timeIntervalSinceNow.rounded()
         
         enterBackgroundDate = nil
         elapsedTime += timeInBackground
