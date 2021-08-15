@@ -79,7 +79,7 @@ final class TITimerTests: XCTestCase {
     
     func test_thanIntervalIsCorrect_whenRunloopTimerIsStopped() {
         // given
-        let expectation = expectation(description: "DispatchSourceTimer is invalidated")
+        let expectation = expectation(description: "RunloopTimer is invalidated")
         let timer = TITimer(type: .runloopTimer(runloop: .current, mode: .default), mode: .onlyActive)
 
         var elapsedTimes: [TimeInterval] = []
